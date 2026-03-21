@@ -73,8 +73,15 @@ class AskRequest(BaseModel):
     model: Literal["gemini-flash-latest", "gemini-pro-latest"] = "gemini-flash-latest"
 
 
+class ResearchFinding(BaseModel):
+    summary: str
+    key_findings: list[str]
+    materials_and_methods: list[str]
+    limitations: list[str]
+
+
 class AskResponse(BaseModel):
-    answer: str
+    data: ResearchFinding
     sources: list[str]
 
 
@@ -93,6 +100,8 @@ def ask_question(req: AskRequest):
         model=req.model,
         contents=req.prompt,
         config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=ResearchFinding,
             tools=[
                 types.Tool(
                     file_search=types.FileSearch(file_search_store_names=[store_name])
@@ -113,4 +122,15 @@ def ask_question(req: AskRequest):
             }
         )
 
-    return AskResponse(answer=response.text, sources=sources)
+    try:
+        data = ResearchFinding.model_validate_json(response.text)
+    except Exception:
+        # Fallback if structure fails
+        data = ResearchFinding(
+            summary=response.text,
+            key_findings=[],
+            materials_and_methods=[],
+            limitations=[]
+        )
+
+    return AskResponse(data=data, sources=sources)
