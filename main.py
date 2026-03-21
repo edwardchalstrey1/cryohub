@@ -164,9 +164,9 @@ def filter_papers(req: FilterRequest):
         for pt in req.publication_type:
             query += " AND publication_type LIKE ?"
             params.append(f'%"{pt}"%')
-    if req.model_systems:
-        for ms in req.model_systems:
-            query += " AND model_systems LIKE ?"
+    if req.model_type:
+        for ms in req.model_type:
+            query += " AND model_type LIKE ?"
             params.append(f'%"{ms}"%')
     if req.research_type:
         for rt in req.research_type:
@@ -233,7 +233,7 @@ def filter_papers(req: FilterRequest):
                 open_access=bool(row["open_access"]),
                 url_or_doi=row["url_or_doi"],
                 publication_type=json.loads(row["publication_type"]) if row["publication_type"] else [],
-                model_systems=json.loads(row["model_systems"]) if row["model_systems"] else [],
+                model_type=json.loads(row["model_type"]) if row["model_type"] else [],
                 research_type=json.loads(row["research_type"]) if row["research_type"] else [],
                 journal_impact_factor=row["journal_impact_factor"],
                 author_institution=json.loads(row["author_institution"]) if row["author_institution"] else [],

@@ -27,7 +27,7 @@ def init_db(conn):
             full_text TEXT,
             
             publication_type TEXT,
-            model_systems TEXT,
+            model_type TEXT,
             research_type TEXT,
             journal_impact_factor REAL,
             author_institution TEXT,
@@ -86,7 +86,7 @@ def update_database():
             
         prompt = (
             "Extract the explicit detailed metadata for this research paper according to the comprehensive PaperInfo schema. "
-            "For arrays like publication_type, model_systems, or techniques, cross-reference against standard scientific classifications. "
+            "For arrays like publication_type, model_type, or techniques, cross-reference against standard scientific classifications. "
             "For arrays like cpa_type and delivery_method, categorize cleanly based on explicitly stated cryoprotective methods. "
             "For journal impact factor and citations, ONLY extract them if explicitly stated in the text, otherwise return null. "
             "For cooling_rate, warming_rate, storage_duration, and storage_temperature, extract the explicit values as strings if present. "
@@ -107,7 +107,7 @@ def update_database():
             cursor.execute('''
                 INSERT INTO papers (
                     filename, title, abstract, authors, publication_year, journal, open_access, url_or_doi, full_text,
-                    publication_type, model_systems, research_type, journal_impact_factor, author_institution, country_region, funding_source, citations, techniques,
+                    publication_type, model_type, research_type, journal_impact_factor, author_institution, country_region, funding_source, citations, techniques,
                     cpa_type, cpa_concentration, delivery_method, preservation_method, outcomes_metrics, cooling_rate, warming_rate, storage_duration, storage_temperature
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -122,7 +122,7 @@ def update_database():
                 data.url_or_doi,
                 full_text,
                 json.dumps(data.publication_type),
-                json.dumps(data.model_systems),
+                json.dumps(data.model_type),
                 json.dumps(data.research_type),
                 data.journal_impact_factor,
                 json.dumps(data.author_institution),

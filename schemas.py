@@ -50,7 +50,7 @@ class PaperInfo(BaseModel):
 
     # Comprehensive Filters
     publication_type: list[str]
-    model_systems: list[str]
+    model_type: list[str]
     research_type: list[str]
     journal_impact_factor: float | None = None
     author_institution: list[str]
@@ -75,7 +75,7 @@ class FilterRequest(BaseModel):
 
     # Text / Enum Matches
     publication_type: list[str] | None = None
-    model_systems: list[str] | None = None
+    model_type: list[str] | None = None
     research_type: list[str] | None = None
     journal: str | None = None
     open_access: bool | None = None

@@ -114,7 +114,7 @@ You can use the `/filter` endpoint to rapidly and locally query your `papers.db`
 
 ### Available Filter Fields
 - `keyword_search` (string)
-- `publication_type`, `model_systems`, `research_type`, `funding_source`, `techniques`, `cpa_type`, `delivery_method`, `preservation_method`, `outcomes_metrics` (Array of Strings)
+- `publication_type`, `model_type`, `research_type`, `funding_source`, `techniques`, `cpa_type`, `delivery_method`, `preservation_method`, `outcomes_metrics` (Array of Strings)
 - `journal`, `author_institution`, `country_region`, `cpa_concentration`, `cooling_rate`, `warming_rate`, `storage_duration`, `storage_temperature` (String, partial matches)
 - `open_access` (boolean)
 - `year_min`, `year_max` (integer ranges)
@@ -125,13 +125,40 @@ You can use the `/filter` endpoint to rapidly and locally query your `papers.db`
 curl -X POST http://localhost:8000/filter \
   -H "Content-Type: application/json" \
   -d '{
+        "keyword_search": "cryoprotection",
+        "publication_type": ["Research Papers", "Review Papers"],
+        "model_type": ["Cells", "Tissue slices"],
+        "research_type": ["Basic", "Translational"],
+        "journal": "Cryobiology",
+        "open_access": true,
+        "author_institution": "Stanford",
+        "country_region": "USA",
+        "funding_source": ["Government"],
+        "techniques": ["Vitrification", "Laser warming"],
+        "cpa_type": ["DMSO", "Glycerol"],
+        "cpa_concentration": "10%",
+        "delivery_method": ["Bulk perfusion"],
+        "preservation_method": ["Ice-free"],
+        "outcomes_metrics": ["Post-thaw viability"],
+        "cooling_rate": "1 °C/min",
+        "warming_rate": "50 °C/min",
+        "storage_duration": "6 months",
+        "storage_temperature": "-196",
         "year_min": 2020,
         "year_max": 2024,
-        "open_access": true,
-        "keyword_search": "cryoprotection",
-        "model_systems": ["Cells"],
-        "impact_factor_min": 3.5
+        "impact_factor_min": 3.5,
+        "impact_factor_max": 15.0,
+        "citations_min": 5,
+        "citations_max": 500
       }'
+```
+
+To retrieve **all** indexed papers simply provide an empty JSON payload, which tells the backend to strip all filters:
+
+```bash
+curl -X POST http://localhost:8000/filter \
+  -H "Content-Type: application/json" \
+  -d '{}'
 ```
 
 The backend dynamically structures this query and returns a strictly typed `PaperInfo` grouping of every document that fulfills your request:
