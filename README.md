@@ -38,12 +38,24 @@ Answer questions such as:
     echo "GEMINI_API_KEY=your-api-key-here" > .env
     ```
 
-### Running the Backend
+### Initialize the File Store
 
 First, initialize the file store. This only needs to be run once in advance of querying the API (or whenever you add new PDFs to the `papers/` directory):
 ```bash
 python init_store.py
 ```
+
+### Database Initialization
+
+To power the `/filter` endpoint rapidly, the backend relies on an SQLite database that caches structured metadata natively extracted from your PDFs. 
+
+Before querying the filter API, ensure you build or update the database:
+```bash
+python update_db.py
+```
+This script will seamlessly parse all documents in `papers/` and save their `PaperInfo` attributes locally to `papers.db`.
+
+### Running the Backend
 
 Then, start the FastAPI server:
 ```bash
@@ -64,7 +76,7 @@ curl -X POST http://localhost:8000/ask \
   -d '{"prompt": "What CPAs have the lowest toxicity at vitrification concentrations for neural tissue?"}'
 ```
 
-### Example Response
+#### Example Response
 
 The backend enforces a strict JSON schema and returns the extracted `data` along with the grounding `sources` used:
 
@@ -84,7 +96,6 @@ The backend enforces a strict JSON schema and returns the extracted `data` along
     "limitations": [
       "Long-term structural connectivity recovery remains unproven."
     ]
-    ]
   },
   "sources": [
     "Advances in Neural Cryopreservation - Smith et al."
@@ -95,15 +106,6 @@ The backend enforces a strict JSON schema and returns the extracted `data` along
 }
 ```
 
-### Database Initialization
-
-To power the `/filter` endpoint rapidly, the backend relies on an SQLite database that caches structured metadata natively extracted from your PDFs. 
-
-Before querying the filter API, ensure you build or update the database:
-```bash
-python update_db.py
-```
-This script will seamlessly parse all documents in `papers/` and save their `PaperInfo` attributes locally to `papers.db`.
 
 ### Filtering Papers
 
