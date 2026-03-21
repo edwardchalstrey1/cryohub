@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
 
     print("Initializing Gemini File Search Store...")
     # Create the store
-    store = client.file_search_stores.create(display_name="cryohub_papers")
+    store = client.file_search_stores.create()
 
     # Locate all PDFs in the papers/ directory
     papers_dir = os.path.join(os.path.dirname(__file__), "papers")
@@ -88,7 +88,7 @@ def ask_question(req: AskRequest):
         )
 
     response = client.models.generate_content(
-        model="gemini-3.1-pro",
+        model="gemini-3.1-pro-preview",
         contents=req.prompt,
         config=types.GenerateContentConfig(
             tools=[
