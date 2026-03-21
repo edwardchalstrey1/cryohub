@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
-from schemas import AskRequest, AskResponse, ResearchFinding
+from schemas import AskRequest, AskResponse, ResearchFinding, SYSTEM_PROMPT
 
 load_dotenv()
 
@@ -57,7 +57,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-
 @app.post("/ask", response_model=AskResponse)
 def ask_question(req: AskRequest):
     client = app_state.get("client")
@@ -74,6 +73,7 @@ def ask_question(req: AskRequest):
         contents=req.prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
+            system_instruction=SYSTEM_PROMPT,
             response_schema=ResearchFinding,
             tools=[
                 types.Tool(
@@ -106,4 +106,4 @@ def ask_question(req: AskRequest):
             limitations=[],
         )
 
-    return AskResponse(data=data, sources=sources)
+    return AskResponse(data=data, sources=sources, dois=[])
