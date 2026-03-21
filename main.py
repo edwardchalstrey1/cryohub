@@ -1,11 +1,10 @@
 import os
 from contextlib import asynccontextmanager
-from typing import Literal
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
+from schemas import AskRequest, AskResponse, ResearchFinding
 
 load_dotenv()
 
@@ -57,22 +56,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-
-class AskRequest(BaseModel):
-    prompt: str
-    model: Literal["gemini-flash-latest", "gemini-pro-latest"] = "gemini-flash-latest"
-
-
-class ResearchFinding(BaseModel):
-    summary: str
-    key_findings: list[str]
-    materials_and_methods: list[str]
-    limitations: list[str]
-
-
-class AskResponse(BaseModel):
-    data: ResearchFinding
-    sources: list[str]
 
 
 @app.post("/ask", response_model=AskResponse)
