@@ -118,6 +118,7 @@ Be objective, cite your sources via exact paper titles to allow database lookup.
 
 
 class PaperInfo(BaseModel):
+    id: int | None = None
     title: str
     abstract: str
     authors: list[str]
@@ -151,6 +152,7 @@ class PaperInfo(BaseModel):
     internal_citations: list[int] = []
 
 class FilterRequest(BaseModel):
+    ids: list[int] | None = None
     keyword_search: str | None = None
 
     publication_type: list[PublicationTypeEnum] | None = None

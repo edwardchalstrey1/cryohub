@@ -56,9 +56,10 @@ uv run python update_db.py
 ```
 
 **How it works:**
-When you run `update_db.py`, the script scans the `papers/` directory for any PDF files. For each PDF, it does two things:
+When you run `update_db.py`, the script scans the `papers/` directory for any PDF files. For each PDF, it does three things:
 1. **Full-Text Extraction**: It uses the `pypdf` library to read through the actual text of the PDF locally on your machine. This full text is saved into the database, allowing you to perform deep keyword searches across the entire body of the paper (not just the title or abstract).
-2. **Metadata Extraction via AI**: It sends the PDF to the Gemini API and asks the AI to read the document and cleanly extract over 20 specific attributes (like the *Cooling Rate*, *Preservation Method*, *Model Type*, etc.). The AI organizes this information into a strict, standardized format. 
+2. **Metadata Extraction via AI**: It sends the PDF to the Gemini API and asks the AI to read the document and cleanly extract over 20 specific attributes (like the *Cooling Rate*, *Preservation Method*, *Model Type*, and the *Bibliography*). 
+3. **External Citations & Internal Linking**: Because the LLM cannot know a paper's live citations, the script connects to the Semantic Scholar REST API to fetch the exact, global real-time citation count. Next, it performs a local cross-referencing loop across the SQLite dataset to match extracted bibliography data against other papers stored within your database, creating a bidirectional relational map natively embedded into each paper.
 
 All of this extracted information is saved into the `papers.db` SQLite file. When you query the `/filter` API later, it instantly searches this local database rather than having to re-read or re-process the PDFs, making your searches extremely fast and completely independent of the AI!
 
@@ -119,6 +120,7 @@ The backend enforces a strict JSON schema and returns the extracted `data` along
 You can use the `/filter` endpoint to rapidly and locally query your `papers.db` corpus using highly specific metadata constraints and general keywords. 
 
 ### Available Filter Fields
+- `ids` (Array of Integers, matches exactly against precise database `id` variables)
 - `keyword_search` (string)
 - `publication_type`, `model_type`, `research_type`, `funding_source`, `techniques`, `cpa_type`, `delivery_method`, `preservation_method`, `outcomes_metrics` (Array of Strings)
 - `journal`, `author_institution`, `country_region` (String, partial matches)
@@ -171,6 +173,17 @@ To retrieve **all** indexed papers simply provide an empty JSON payload, which t
 curl -X POST http://localhost:8000/filter \
   -H "Content-Type: application/json" \
   -d '{}'
+```
+
+### Querying Linked Citations
+As papers are natively ingested, the backend automatically cross-links documents that cite one another via the `internal_citations` array. If you receive a paper from the `/filter` endpoint with `internal_citations: [1, 5]`, you can instantly fetch those exact connected documents by passing their numerical IDs directly into a new query:
+
+```bash
+curl -X POST http://localhost:8000/filter \
+  -H "Content-Type: application/json" \
+  -d '{
+        "ids": [1, 5]
+      }'
 ```
 
 The backend dynamically structures this query and returns a strictly typed `PaperInfo` grouping of every document that fulfills your request:

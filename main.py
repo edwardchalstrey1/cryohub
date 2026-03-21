@@ -19,6 +19,7 @@ load_dotenv()
 def row_to_paper_info(row) -> PaperInfo:
     import json
     return PaperInfo(
+        id=row["id"],
         title=row["title"],
         abstract=row["abstract"],
         authors=json.loads(row["authors"]) if row["authors"] else [],
@@ -262,6 +263,11 @@ def filter_papers(req: FilterRequest):
     if req.storage_temperature is not None:
         query += " AND storage_temperature = ?"
         params.append(req.storage_temperature)
+
+    if req.ids:
+        placeholders = ", ".join(["?"] * len(req.ids))
+        query += f" AND id IN ({placeholders})"
+        params.extend(req.ids)
 
     if req.keyword_search:
         query += " AND (title LIKE ? OR abstract LIKE ? OR full_text LIKE ?)"
