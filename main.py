@@ -4,7 +4,15 @@ from fastapi import FastAPI, HTTPException
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
-from schemas import AskRequest, AskResponse, ResearchFinding, SYSTEM_PROMPT
+from schemas import (
+    AskRequest,
+    AskResponse,
+    ResearchFinding,
+    SYSTEM_PROMPT,
+    FilterRequest,
+    FilterResponse,
+    PaperInfo,
+)
 
 load_dotenv()
 
@@ -97,3 +105,57 @@ def ask_question(req: AskRequest):
         )
 
     return AskResponse(data=data, sources=data.sources, dois=data.dois)
+
+
+@app.post("/filter", response_model=FilterResponse)
+def filter_papers(req: FilterRequest):
+    import sqlite3
+    import json
+    
+    db_path = os.path.join(os.path.dirname(__file__), "papers.db")
+    if not os.path.exists(db_path):
+        raise HTTPException(
+            status_code=500, 
+            detail="Database not found. Please run 'python update_db.py' first."
+        )
+        
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    query = "SELECT * FROM papers WHERE 1=1"
+    params = []
+
+    if req.publication_year:
+        query += " AND publication_year = ?"
+        params.append(req.publication_year)
+    if req.journal:
+        query += " AND journal LIKE ?"
+        params.append(f"%{req.journal}%")
+    if req.open_access is True:
+        query += " AND open_access = 1"
+    elif req.open_access is False:
+        query += " AND open_access = 0"
+    if req.keyword_search:
+        query += " AND (title LIKE ? OR abstract LIKE ?)"
+        params.extend([f"%{req.keyword_search}%", f"%{req.keyword_search}%"])
+
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+
+    papers = []
+    for row in rows:
+        papers.append(
+            PaperInfo(
+                title=row["title"],
+                abstract=row["abstract"],
+                authors=json.loads(row["authors"]),
+                publication_year=row["publication_year"],
+                journal=row["journal"],
+                open_access=bool(row["open_access"]),
+                url_or_doi=row["url_or_doi"]
+            )
+        )
+        
+    conn.close()
+    return FilterResponse(papers=papers)

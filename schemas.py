@@ -38,3 +38,24 @@ You must:
 Always return structured results that match the ResearchFinding schema.
 Be objective, cite your sources via paper titles and DOIs.
 """
+
+class PaperInfo(BaseModel):
+    title: str
+    abstract: str
+    authors: list[str]
+    publication_year: str
+    journal: str
+    open_access: bool
+    url_or_doi: str
+
+
+class FilterRequest(BaseModel):
+    publication_year: str | None = None
+    journal: str | None = None
+    open_access: bool | None = None
+    keyword_search: str | None = None
+    model: Literal["gemini-flash-latest", "gemini-pro-latest"] = "gemini-flash-latest"
+
+
+class FilterResponse(BaseModel):
+    papers: list[PaperInfo]

@@ -52,7 +52,9 @@ uvicorn main:app --reload
 
 The server will automatically attach to the existing File Search store configured by the initialization script, avoiding redundant upload times.
 
-### Testing the API
+## Testing the API
+
+### Asking Questions
 
 Once the server says "Store is ready", you can query it:
 
@@ -89,6 +91,48 @@ The backend enforces a strict JSON schema and returns the extracted `data` along
   ],
   "dois": [
     "10.1016/j.cryobiol.2023.123456"
+  ]
+}
+```
+
+### Database Initialization
+
+To power the `/filter` endpoint rapidly, the backend relies on an SQLite database that caches structured metadata natively extracted from your PDFs. 
+
+Before querying the filter API, ensure you build or update the database:
+```bash
+python update_db.py
+```
+This script will seamlessly parse all documents in `papers/` and save their `PaperInfo` attributes locally to `papers.db`.
+
+### Filtering Papers
+
+You can use the `/filter` endpoint to rapidly and locally query your `papers.db` corpus using highly specific metadata constraints and general keywords. 
+
+```bash
+curl -X POST http://localhost:8000/filter \
+  -H "Content-Type: application/json" \
+  -d '{
+        "publication_year": "2023",
+        "open_access": true,
+        "keyword_search": "vitrification toxicity"
+      }'
+```
+
+The backend dynamically structures this query and returns a strictly typed `PaperInfo` grouping of every document that fulfills your request:
+
+```json
+{
+  "papers": [
+    {
+      "title": "Advances in Neural Cryopreservation",
+      "abstract": "This study examines the impacts of...",
+      "authors": ["Smith A.", "Jones B."],
+      "publication_year": "2023",
+      "journal": "Cryobiology",
+      "open_access": true,
+      "url_or_doi": "10.1016/j.cryobiol.2023.123456"
+    }
   ]
 }
 ```
