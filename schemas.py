@@ -14,6 +14,8 @@ class ResearchFinding(BaseModel):
     key_findings: list[str]
     materials_and_methods: list[str]
     limitations: list[str]
+    sources: list[str]
+    dois: list[str]
 
 
 class AskResponse(BaseModel):

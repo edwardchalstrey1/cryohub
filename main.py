@@ -83,18 +83,6 @@ def ask_question(req: AskRequest):
         ),
     )
 
-    grounding = response.candidates[0].grounding_metadata
-    sources = []
-    if grounding and grounding.grounding_chunks:
-        # Extract unique sources titles from the grounding chunks
-        sources = list(
-            {
-                c.retrieved_context.title
-                for c in grounding.grounding_chunks
-                if c.retrieved_context
-            }
-        )
-
     try:
         data = ResearchFinding.model_validate_json(response.text)
     except Exception:
@@ -104,6 +92,8 @@ def ask_question(req: AskRequest):
             key_findings=[],
             materials_and_methods=[],
             limitations=[],
+            sources=[],
+            dois=[],
         )
 
-    return AskResponse(data=data, sources=sources, dois=[])
+    return AskResponse(data=data, sources=data.sources, dois=data.dois)

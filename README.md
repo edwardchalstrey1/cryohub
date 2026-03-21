@@ -82,9 +82,13 @@ The backend enforces a strict JSON schema and returns the extracted `data` along
     "limitations": [
       "Long-term structural connectivity recovery remains unproven."
     ]
+    ]
   },
   "sources": [
     "Advances in Neural Cryopreservation - Smith et al."
+  ],
+  "dois": [
+    "10.1016/j.cryobiol.2023.123456"
   ]
 }
 ```
