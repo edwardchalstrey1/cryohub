@@ -27,42 +27,62 @@ async def lifespan(app: FastAPI):
 
     client = genai.Client(api_key=api_key)
 
-    print("Initializing Gemini File Search Store...")
-    # Create the store
-    store = client.file_search_stores.create()
+    store_file = os.path.join(os.path.dirname(__file__), ".store_id")
+    store_name = None
 
-    # Locate all PDFs in the papers/ directory
-    papers_dir = os.path.join(os.path.dirname(__file__), "papers")
-    pdf_files = glob.glob(os.path.join(papers_dir, "*.pdf"))
+    if os.path.exists(store_file):
+        with open(store_file, "r") as f:
+            saved_name = f.read().strip()
+        try:
+            # Verify the store still exists
+            client.file_search_stores.get(name=saved_name)
+            store_name = saved_name
+            print(f"Loaded existing Gemini File Search Store: {store_name}")
+        except Exception:
+            print(
+                f"Saved store {saved_name} not found or invalid. Creating a new one..."
+            )
 
-    print(f"Found {len(pdf_files)} PDF files in {papers_dir}. Uploading...")
+    if not store_name:
+        print("Initializing new Gemini File Search Store...")
+        # Create the store
+        store = client.file_search_stores.create()
+        store_name = store.name
 
-    upload_ops = []
-    for pdf_file in pdf_files:
-        print(f"Uploading {os.path.basename(pdf_file)}...")
-        op = client.file_search_stores.upload_to_file_search_store(
-            file_search_store_name=store.name, file=pdf_file
+        # Locate all PDFs in the papers/ directory
+        papers_dir = os.path.join(os.path.dirname(__file__), "papers")
+        pdf_files = glob.glob(os.path.join(papers_dir, "*.pdf"))
+
+        print(f"Found {len(pdf_files)} PDF files in {papers_dir}. Uploading...")
+
+        upload_ops = []
+        for pdf_file in pdf_files:
+            print(f"Uploading {os.path.basename(pdf_file)}...")
+            op = client.file_search_stores.upload_to_file_search_store(
+                file_search_store_name=store_name, file=pdf_file
+            )
+            upload_ops.append(op)
+
+        print(
+            "Waiting for files to be processed by Gemini (this may take a few moments)..."
         )
-        upload_ops.append(op)
+        for op in upload_ops:
+            while not op.done:
+                time.sleep(2)
+                op = client.operations.get(op)
 
-    print(
-        "Waiting for files to be processed by Gemini (this may take a few moments)..."
-    )
-    for op in upload_ops:
-        while not op.done:
-            time.sleep(2)
-            op = client.operations.get(op)
+        # Save to file
+        with open(store_file, "w") as f:
+            f.write(store_name)
 
     # Save the references in global state so the endpoints can use them
-    app_state["store_name"] = store.name
+    app_state["store_name"] = store_name
     app_state["client"] = client
-    print(f"Store {store.name} is ready.")
+    print(f"Store {store_name} is ready.")
 
     yield
 
-    # Cleanup: delete the store when the app shuts down so we don't accumulate stores during dev
-    print(f"Cleaning up store {store.name}...")
-    client.file_search_stores.delete(name=store.name)
+    # Store persists across restarts for production, so no cleanup is performed here
 
 
 app = FastAPI(lifespan=lifespan)
@@ -106,7 +126,7 @@ def ask_question(req: AskRequest):
                 types.Tool(
                     file_search=types.FileSearch(file_search_store_names=[store_name])
                 )
-            ]
+            ],
         ),
     )
 
@@ -130,7 +150,7 @@ def ask_question(req: AskRequest):
             summary=response.text,
             key_findings=[],
             materials_and_methods=[],
-            limitations=[]
+            limitations=[],
         )
 
     return AskResponse(data=data, sources=sources)
