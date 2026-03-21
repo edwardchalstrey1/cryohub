@@ -126,16 +126,61 @@ def filter_papers(req: FilterRequest):
     query = "SELECT * FROM papers WHERE 1=1"
     params = []
 
-    if req.publication_year:
-        query += " AND publication_year = ?"
-        params.append(req.publication_year)
+    if req.year_min is not None:
+        query += " AND publication_year >= ?"
+        params.append(req.year_min)
+    if req.year_max is not None:
+        query += " AND publication_year <= ?"
+        params.append(req.year_max)
+    if req.impact_factor_min is not None:
+        query += " AND journal_impact_factor >= ?"
+        params.append(req.impact_factor_min)
+    if req.impact_factor_max is not None:
+        query += " AND journal_impact_factor <= ?"
+        params.append(req.impact_factor_max)
+    if req.citations_min is not None:
+        query += " AND citations >= ?"
+        params.append(req.citations_min)
+    if req.citations_max is not None:
+        query += " AND citations <= ?"
+        params.append(req.citations_max)
+        
     if req.journal:
         query += " AND journal LIKE ?"
         params.append(f"%{req.journal}%")
+    if req.author_institution:
+        query += " AND author_institution LIKE ?"
+        params.append(f"%{req.author_institution}%")
+    if req.country_region:
+        query += " AND country_region LIKE ?"
+        params.append(f"%{req.country_region}%")
+        
     if req.open_access is True:
         query += " AND open_access = 1"
     elif req.open_access is False:
         query += " AND open_access = 0"
+
+    if req.publication_type:
+        for pt in req.publication_type:
+            query += " AND publication_type LIKE ?"
+            params.append(f'%"{pt}"%')
+    if req.model_systems:
+        for ms in req.model_systems:
+            query += " AND model_systems LIKE ?"
+            params.append(f'%"{ms}"%')
+    if req.research_type:
+        for rt in req.research_type:
+            query += " AND research_type LIKE ?"
+            params.append(f'%"{rt}"%')
+    if req.funding_source:
+        for fs in req.funding_source:
+            query += " AND funding_source LIKE ?"
+            params.append(f'%"{fs}"%')
+    if req.techniques:
+        for tech in req.techniques:
+            query += " AND techniques LIKE ?"
+            params.append(f'%"{tech}"%')
+
     if req.keyword_search:
         query += " AND (title LIKE ? OR abstract LIKE ? OR full_text LIKE ?)"
         params.extend([f"%{req.keyword_search}%", f"%{req.keyword_search}%", f"%{req.keyword_search}%"])
@@ -149,11 +194,20 @@ def filter_papers(req: FilterRequest):
             PaperInfo(
                 title=row["title"],
                 abstract=row["abstract"],
-                authors=json.loads(row["authors"]),
+                authors=json.loads(row["authors"]) if row["authors"] else [],
                 publication_year=row["publication_year"],
                 journal=row["journal"],
                 open_access=bool(row["open_access"]),
-                url_or_doi=row["url_or_doi"]
+                url_or_doi=row["url_or_doi"],
+                publication_type=json.loads(row["publication_type"]) if row["publication_type"] else [],
+                model_systems=json.loads(row["model_systems"]) if row["model_systems"] else [],
+                research_type=json.loads(row["research_type"]) if row["research_type"] else [],
+                journal_impact_factor=row["journal_impact_factor"],
+                author_institution=json.loads(row["author_institution"]) if row["author_institution"] else [],
+                country_region=json.loads(row["country_region"]) if row["country_region"] else [],
+                funding_source=json.loads(row["funding_source"]) if row["funding_source"] else [],
+                citations=row["citations"],
+                techniques=json.loads(row["techniques"]) if row["techniques"] else []
             )
         )
         

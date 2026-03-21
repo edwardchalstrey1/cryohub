@@ -112,13 +112,25 @@ The backend enforces a strict JSON schema and returns the extracted `data` along
 
 You can use the `/filter` endpoint to rapidly and locally query your `papers.db` corpus using highly specific metadata constraints and general keywords. 
 
+### Available Filter Fields
+- `keyword_search` (string)
+- `publication_type`, `model_systems`, `research_type`, `funding_source`, `techniques` (Array of Strings)
+- `journal`, `author_institution`, `country_region` (String, partial matches)
+- `open_access` (boolean)
+- `year_min`, `year_max` (integer ranges)
+- `impact_factor_min`, `impact_factor_max` (float ranges)
+- `citations_min`, `citations_max` (integer ranges)
+
 ```bash
 curl -X POST http://localhost:8000/filter \
   -H "Content-Type: application/json" \
   -d '{
-        "publication_year": "2020",
+        "year_min": 2020,
+        "year_max": 2024,
         "open_access": true,
-        "keyword_search": "cryoprotection"
+        "keyword_search": "cryoprotection",
+        "model_systems": ["Cells"],
+        "impact_factor_min": 3.5
       }'
 ```
 

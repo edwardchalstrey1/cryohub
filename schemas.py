@@ -43,17 +43,45 @@ class PaperInfo(BaseModel):
     title: str
     abstract: str
     authors: list[str]
-    publication_year: str
-    journal: str
+    publication_year: int | None = None
+    journal: str | None = None
     open_access: bool
-    url_or_doi: str
+    url_or_doi: str | None = None
+
+    # Comprehensive Filters
+    publication_type: list[str]
+    model_systems: list[str]
+    research_type: list[str]
+    journal_impact_factor: float | None = None
+    author_institution: list[str]
+    country_region: list[str]
+    funding_source: list[str]
+    citations: int | None = None
+    techniques: list[str]
 
 
 class FilterRequest(BaseModel):
-    publication_year: str | None = None
+    keyword_search: str | None = None
+
+    # Text / Enum Matches
+    publication_type: list[str] | None = None
+    model_systems: list[str] | None = None
+    research_type: list[str] | None = None
     journal: str | None = None
     open_access: bool | None = None
-    keyword_search: str | None = None
+    author_institution: str | None = None
+    country_region: str | None = None
+    funding_source: list[str] | None = None
+    techniques: list[str] | None = None
+
+    # Ranges
+    year_min: int | None = None
+    year_max: int | None = None
+    impact_factor_min: float | None = None
+    impact_factor_max: float | None = None
+    citations_min: int | None = None
+    citations_max: int | None = None
+
     model: Literal["gemini-flash-latest", "gemini-pro-latest"] = "gemini-flash-latest"
 
 

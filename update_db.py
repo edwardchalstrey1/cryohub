@@ -12,24 +12,31 @@ load_dotenv()
 
 def init_db(conn):
     cursor = conn.cursor()
+    cursor.execute("DROP TABLE IF EXISTS papers")
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS papers (
+        CREATE TABLE papers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             filename TEXT UNIQUE,
             title TEXT,
             abstract TEXT,
             authors TEXT,
-            publication_year TEXT,
+            publication_year INTEGER,
             journal TEXT,
             open_access INTEGER,
             url_or_doi TEXT,
-            full_text TEXT
+            full_text TEXT,
+            
+            publication_type TEXT,
+            model_systems TEXT,
+            research_type TEXT,
+            journal_impact_factor REAL,
+            author_institution TEXT,
+            country_region TEXT,
+            funding_source TEXT,
+            citations INTEGER,
+            techniques TEXT
         )
     ''')
-    try:
-        cursor.execute("ALTER TABLE papers ADD COLUMN full_text TEXT")
-    except sqlite3.OperationalError:
-        pass
     conn.commit()
 
 def update_database():
@@ -49,9 +56,6 @@ def update_database():
     for pdf_file in pdf_files:
         filename = os.path.basename(pdf_file)
         
-        cursor.execute("SELECT full_text FROM papers WHERE filename = ?", (filename,))
-        row = cursor.fetchone()
-        
         # Local text extraction
         full_text = ""
         try:
@@ -61,16 +65,6 @@ def update_database():
                     full_text += (page.extract_text() or "") + "\n"
         except Exception as e:
             print(f"Failed to extract text locally for {filename}: {e}")
-
-        if row:
-            if row[0]:
-                print(f"Skipping {filename}, already fully processed.")
-                continue
-            else:
-                print(f"Updating {filename} with full text...")
-                cursor.execute("UPDATE papers SET full_text = ? WHERE filename = ?", (full_text, filename))
-                conn.commit()
-                continue
             
         print(f"Processing {filename} via Gemini...")
         
@@ -80,7 +74,12 @@ def update_database():
             print(f"Failed to upload {filename}: {e}")
             continue
             
-        prompt = "Extract the explicit detailed metadata for this research paper. If open access status is not stated cleanly, infer based on copyright block or return false."
+        prompt = (
+            "Extract the explicit detailed metadata for this research paper according to the PaperInfo schema. "
+            "For arrays like publication_type or techniques, cross-reference against standard scientific classifications. "
+            "For journal impact factor and citations, ONLY extract them if explicitly stated in the text, otherwise return null. "
+            "If open access status is not stated cleanly, infer based on copyright block or return false."
+        )
         try:
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
@@ -94,8 +93,11 @@ def update_database():
             data = PaperInfo.model_validate_json(response.text)
             
             cursor.execute('''
-                INSERT INTO papers (filename, title, abstract, authors, publication_year, journal, open_access, url_or_doi, full_text)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO papers (
+                    filename, title, abstract, authors, publication_year, journal, open_access, url_or_doi, full_text,
+                    publication_type, model_systems, research_type, journal_impact_factor, author_institution, country_region, funding_source, citations, techniques
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 filename, 
                 data.title, 
@@ -105,7 +107,16 @@ def update_database():
                 data.journal, 
                 1 if data.open_access else 0, 
                 data.url_or_doi,
-                full_text
+                full_text,
+                json.dumps(data.publication_type),
+                json.dumps(data.model_systems),
+                json.dumps(data.research_type),
+                data.journal_impact_factor,
+                json.dumps(data.author_institution),
+                json.dumps(data.country_region),
+                json.dumps(data.funding_source),
+                data.citations,
+                json.dumps(data.techniques)
             ))
             conn.commit()
             print(f"Successfully added {filename} to database.")
