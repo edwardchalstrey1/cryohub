@@ -33,9 +33,9 @@ Answer questions such as:
     ```bash
     uv pip install -r requirements.txt
     ```
-4.  Export your Gemini API key:
+4.  Set up your environment variables by creating a `.env` file in the root directory:
     ```bash
-    export GEMINI_API_KEY="your-api-key-here"
+    echo "GEMINI_API_KEY=your-api-key-here" > .env
     ```
 
 ### Running the Backend
