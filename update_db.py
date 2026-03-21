@@ -179,15 +179,15 @@ def update_database():
     cursor.execute("SELECT id, title, extracted_references FROM papers")
     all_papers = cursor.fetchall()
     
+    internal_cites_map = {p[0]: [] for p in all_papers}
+    
     for p in all_papers:
         p_id = p[0]
-        p_title = p[1]
         try:
             refs = json.loads(p[2]) if p[2] else []
         except:
             refs = []
             
-        internal_cites = []
         for ref in refs:
             if not ref or len(ref) < 10:
                 continue
@@ -197,10 +197,13 @@ def update_database():
                 t_id = t[0]
                 t_title = t[1]
                 if t_title and (t_title.lower() in ref.lower() or ref.lower() in t_title.lower()):
-                    if t_id not in internal_cites:
-                        internal_cites.append(t_id)
+                    if t_id not in internal_cites_map[p_id]:
+                        internal_cites_map[p_id].append(t_id)
+                    if p_id not in internal_cites_map[t_id]:
+                        internal_cites_map[t_id].append(p_id)
                         
-        cursor.execute("UPDATE papers SET internal_citations = ? WHERE id = ?", (json.dumps(internal_cites), p_id))
+    for p_id, cites in internal_cites_map.items():
+        cursor.execute("UPDATE papers SET internal_citations = ? WHERE id = ?", (json.dumps(cites), p_id))
     
     conn.commit()
     conn.close()
