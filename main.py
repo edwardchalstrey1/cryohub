@@ -198,9 +198,12 @@ def filter_papers(req: FilterRequest):
             query += " AND outcomes_metrics LIKE ?"
             params.append(f'%"{val}"%')
 
-    if req.cpa_concentration:
-        query += " AND cpa_concentration LIKE ?"
-        params.append(f"%{req.cpa_concentration}%")
+    if req.cpa_concentration_min is not None:
+        query += " AND cpa_concentration_max >= ?"
+        params.append(req.cpa_concentration_min)
+    if req.cpa_concentration_max is not None:
+        query += " AND cpa_concentration_min <= ?"
+        params.append(req.cpa_concentration_max)
     if req.cooling_rate is not None:
         query += " AND cooling_rate = ?"
         params.append(req.cooling_rate)
@@ -242,7 +245,8 @@ def filter_papers(req: FilterRequest):
                 citations=row["citations"],
                 techniques=json.loads(row["techniques"]) if row["techniques"] else [],
                 cpa_type=json.loads(row["cpa_type"]) if row["cpa_type"] else [],
-                cpa_concentration=row["cpa_concentration"],
+                cpa_concentration_min=row["cpa_concentration_min"],
+                cpa_concentration_max=row["cpa_concentration_max"],
                 delivery_method=json.loads(row["delivery_method"]) if row["delivery_method"] else [],
                 preservation_method=json.loads(row["preservation_method"]) if row["preservation_method"] else [],
                 outcomes_metrics=json.loads(row["outcomes_metrics"]) if row["outcomes_metrics"] else [],

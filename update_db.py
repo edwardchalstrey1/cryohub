@@ -37,7 +37,8 @@ def init_db(conn):
             techniques TEXT,
             
             cpa_type TEXT,
-            cpa_concentration TEXT,
+            cpa_concentration_min REAL,
+            cpa_concentration_max REAL,
             delivery_method TEXT,
             preservation_method TEXT,
             outcomes_metrics TEXT,
@@ -108,9 +109,9 @@ def update_database():
                 INSERT INTO papers (
                     filename, title, abstract, authors, publication_year, journal, open_access, url_or_doi, full_text,
                     publication_type, model_type, research_type, journal_impact_factor, author_institution, country_region, funding_source, citations, techniques,
-                    cpa_type, cpa_concentration, delivery_method, preservation_method, outcomes_metrics, cooling_rate, warming_rate, storage_duration, storage_temperature
+                    cpa_type, cpa_concentration_min, cpa_concentration_max, delivery_method, preservation_method, outcomes_metrics, cooling_rate, warming_rate, storage_duration, storage_temperature
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 filename, 
                 data.title, 
@@ -131,7 +132,8 @@ def update_database():
                 data.citations,
                 json.dumps(data.techniques),
                 json.dumps(data.cpa_type),
-                data.cpa_concentration,
+                data.cpa_concentration_min,
+                data.cpa_concentration_max,
                 json.dumps(data.delivery_method),
                 json.dumps(data.preservation_method),
                 json.dumps(data.outcomes_metrics),

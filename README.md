@@ -122,13 +122,14 @@ You can use the `/filter` endpoint to rapidly and locally query your `papers.db`
 ### Available Filter Fields
 - `keyword_search` (string)
 - `publication_type`, `model_type`, `research_type`, `funding_source`, `techniques`, `cpa_type`, `delivery_method`, `preservation_method`, `outcomes_metrics` (Array of Strings)
-- `journal`, `author_institution`, `country_region`, `cpa_concentration` (String, partial matches)
+- `journal`, `author_institution`, `country_region` (String, partial matches)
 - `cooling_rate` (Integer, °C/min), `warming_rate` (Integer, °C/min)
 - `storage_duration` (Integer, days), `storage_temperature` (Integer, °C)
 - `open_access` (boolean)
 - `year_min`, `year_max` (integer ranges)
 - `impact_factor_min`, `impact_factor_max` (float ranges)
 - `citations_min`, `citations_max` (integer ranges)
+- `cpa_concentration_min`, `cpa_concentration_max` (float ranges)
 
 ```bash
 curl -X POST http://localhost:8000/filter \
@@ -145,7 +146,8 @@ curl -X POST http://localhost:8000/filter \
         "funding_source": ["Government"],
         "techniques": ["Vitrification", "Laser warming"],
         "cpa_type": ["DMSO", "Glycerol"],
-        "cpa_concentration": "10%",
+        "cpa_concentration_min": 5.0,
+        "cpa_concentration_max": 15.5,
         "delivery_method": ["Bulk perfusion"],
         "preservation_method": ["Ice-free"],
         "outcomes_metrics": ["Post-thaw viability"],
