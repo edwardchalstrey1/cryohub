@@ -39,41 +39,13 @@ async def lifespan(app: FastAPI):
             store_name = saved_name
             print(f"Loaded existing Gemini File Search Store: {store_name}")
         except Exception:
-            print(
-                f"Saved store {saved_name} not found or invalid. Creating a new one..."
+            raise RuntimeError(
+                f"Saved store {saved_name} not found or invalid. Please run init_store.py again."
             )
-
-    if not store_name:
-        print("Initializing new Gemini File Search Store...")
-        # Create the store
-        store = client.file_search_stores.create()
-        store_name = store.name
-
-        # Locate all PDFs in the papers/ directory
-        papers_dir = os.path.join(os.path.dirname(__file__), "papers")
-        pdf_files = glob.glob(os.path.join(papers_dir, "*.pdf"))
-
-        print(f"Found {len(pdf_files)} PDF files in {papers_dir}. Uploading...")
-
-        upload_ops = []
-        for pdf_file in pdf_files:
-            print(f"Uploading {os.path.basename(pdf_file)}...")
-            op = client.file_search_stores.upload_to_file_search_store(
-                file_search_store_name=store_name, file=pdf_file
-            )
-            upload_ops.append(op)
-
-        print(
-            "Waiting for files to be processed by Gemini (this may take a few moments)..."
+    else:
+        raise RuntimeError(
+            "File store not initialized. Please run 'uv run python init_store.py' before starting the server."
         )
-        for op in upload_ops:
-            while not op.done:
-                time.sleep(2)
-                op = client.operations.get(op)
-
-        # Save to file
-        with open(store_file, "w") as f:
-            f.write(store_name)
 
     # Save the references in global state so the endpoints can use them
     app_state["store_name"] = store_name

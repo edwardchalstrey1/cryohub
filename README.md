@@ -40,12 +40,17 @@ Answer questions such as:
 
 ### Running the Backend
 
-Start the FastAPI server:
+First, initialize the file store. This only needs to be run once in advance of querying the API (or whenever you add new PDFs to the `papers/` directory):
+```bash
+python init_store.py
+```
+
+Then, start the FastAPI server:
 ```bash
 uvicorn main:app --reload
 ```
 
-The server will automatically fetch the PDFs from the `papers/` directory, create a Gemini File Search store, upload them, and wait for them to finish processing before accepting requests.
+The server will automatically attach to the existing File Search store configured by the initialization script, avoiding redundant upload times.
 
 ### Testing the API
 
