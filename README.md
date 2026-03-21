@@ -96,20 +96,19 @@ The backend enforces a strict JSON schema and returns the extracted `data` along
       "M22 achieves vitrification with acceptable viability in cortical slices.",
       "Toxicity is primarily driven by osmotic stress rather than biochemical toxicity at -130°C."
     ],
-    "materials_and_methods": [
-      "M22 (Cryoprotective Agent)",
-      "Neural Cortical Slices",
-      "Vitrification"
-    ],
     "limitations": [
       "Long-term structural connectivity recovery remains unproven."
     ]
   },
   "sources": [
-    "Advances in Neural Cryopreservation - Smith et al."
-  ],
-  "dois": [
-    "10.1016/j.cryobiol.2023.123456"
+    {
+      "title": "Advances in Neural Cryopreservation",
+      "authors": ["Smith, J.", "Doe, A."],
+      "publication_year": 2023,
+      "open_access": true,
+      "cpa_type": ["M22", "VSN22"],
+      "techniques": ["Vitrification"]
+    }
   ]
 }
 ```

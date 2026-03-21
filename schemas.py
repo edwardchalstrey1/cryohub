@@ -92,16 +92,13 @@ class AskRequest(BaseModel):
 class ResearchFinding(BaseModel):
     summary: str
     key_findings: list[str]
-    materials_and_methods: list[str]
     limitations: list[str]
-    sources: list[str]
-    dois: list[str]
+    source_titles: list[str]
 
 
 class AskResponse(BaseModel):
     data: ResearchFinding
-    sources: list[str]
-    dois: list[str]
+    sources: list[dict]
 
 
 # 2. Define the Agent's "System Prompt"
@@ -116,7 +113,7 @@ You must:
 3. Provide a structured report.
 
 Always return structured results that match the ResearchFinding schema.
-Be objective, cite your sources via paper titles and DOIs.
+Be objective, cite your sources via exact paper titles to allow database lookup.
 """
 
 

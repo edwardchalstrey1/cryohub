@@ -16,6 +16,37 @@ from schemas import (
 
 load_dotenv()
 
+def row_to_paper_info(row) -> PaperInfo:
+    import json
+    return PaperInfo(
+        title=row["title"],
+        abstract=row["abstract"],
+        authors=json.loads(row["authors"]) if row["authors"] else [],
+        publication_year=row["publication_year"],
+        journal=row["journal"],
+        open_access=bool(row["open_access"]),
+        url_or_doi=row["url_or_doi"],
+        publication_type=json.loads(row["publication_type"]) if row["publication_type"] else [],
+        model_type=json.loads(row["model_type"]) if row["model_type"] else [],
+        research_type=json.loads(row["research_type"]) if row["research_type"] else [],
+        journal_impact_factor=row["journal_impact_factor"],
+        author_institution=json.loads(row["author_institution"]) if row["author_institution"] else [],
+        country_region=json.loads(row["country_region"]) if row["country_region"] else [],
+        funding_source=json.loads(row["funding_source"]) if row["funding_source"] else [],
+        citations=row["citations"],
+        techniques=json.loads(row["techniques"]) if row["techniques"] else [],
+        cpa_type=json.loads(row["cpa_type"]) if row["cpa_type"] else [],
+        cpa_concentration_min=row["cpa_concentration_min"],
+        cpa_concentration_max=row["cpa_concentration_max"],
+        delivery_method=json.loads(row["delivery_method"]) if row["delivery_method"] else [],
+        preservation_method=json.loads(row["preservation_method"]) if row["preservation_method"] else [],
+        outcomes_metrics=json.loads(row["outcomes_metrics"]) if row["outcomes_metrics"] else [],
+        cooling_rate=row["cooling_rate"],
+        warming_rate=row["warming_rate"],
+        storage_duration=row["storage_duration"],
+        storage_temperature=row["storage_temperature"]
+    )
+
 # Global state for communicating with the Gemini File Search store
 app_state = {}
 
@@ -98,13 +129,26 @@ def ask_question(req: AskRequest):
         data = ResearchFinding(
             summary=response.text,
             key_findings=[],
-            materials_and_methods=[],
             limitations=[],
-            sources=[],
-            dois=[],
+            source_titles=[],
         )
 
-    return AskResponse(data=data, sources=data.sources, dois=data.dois)
+    sources_info = []
+    db_path = os.path.join(os.path.dirname(__file__), "papers.db")
+    if os.path.exists(db_path) and data.source_titles:
+        import sqlite3
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        for title in data.source_titles:
+            cursor.execute("SELECT * FROM papers WHERE title LIKE ?", (f"%{title}%",))
+            row = cursor.fetchone()
+            if row:
+                p_info = row_to_paper_info(row)
+                sources_info.append(p_info.model_dump(exclude_none=True))
+        conn.close()
+
+    return AskResponse(data=data, sources=sources_info)
 
 
 @app.post("/filter", response_model=FilterResponse)
@@ -226,36 +270,7 @@ def filter_papers(req: FilterRequest):
 
     papers = []
     for row in rows:
-        papers.append(
-            PaperInfo(
-                title=row["title"],
-                abstract=row["abstract"],
-                authors=json.loads(row["authors"]) if row["authors"] else [],
-                publication_year=row["publication_year"],
-                journal=row["journal"],
-                open_access=bool(row["open_access"]),
-                url_or_doi=row["url_or_doi"],
-                publication_type=json.loads(row["publication_type"]) if row["publication_type"] else [],
-                model_type=json.loads(row["model_type"]) if row["model_type"] else [],
-                research_type=json.loads(row["research_type"]) if row["research_type"] else [],
-                journal_impact_factor=row["journal_impact_factor"],
-                author_institution=json.loads(row["author_institution"]) if row["author_institution"] else [],
-                country_region=json.loads(row["country_region"]) if row["country_region"] else [],
-                funding_source=json.loads(row["funding_source"]) if row["funding_source"] else [],
-                citations=row["citations"],
-                techniques=json.loads(row["techniques"]) if row["techniques"] else [],
-                cpa_type=json.loads(row["cpa_type"]) if row["cpa_type"] else [],
-                cpa_concentration_min=row["cpa_concentration_min"],
-                cpa_concentration_max=row["cpa_concentration_max"],
-                delivery_method=json.loads(row["delivery_method"]) if row["delivery_method"] else [],
-                preservation_method=json.loads(row["preservation_method"]) if row["preservation_method"] else [],
-                outcomes_metrics=json.loads(row["outcomes_metrics"]) if row["outcomes_metrics"] else [],
-                cooling_rate=row["cooling_rate"],
-                warming_rate=row["warming_rate"],
-                storage_duration=row["storage_duration"],
-                storage_temperature=row["storage_temperature"]
-            )
-        )
+        papers.append(row_to_paper_info(row))
         
     conn.close()
     return FilterResponse(papers=papers)
