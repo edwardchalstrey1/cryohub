@@ -2,6 +2,7 @@ import os
 import glob
 import sqlite3
 import json
+import pypdf
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
@@ -21,9 +22,14 @@ def init_db(conn):
             publication_year TEXT,
             journal TEXT,
             open_access INTEGER,
-            url_or_doi TEXT
+            url_or_doi TEXT,
+            full_text TEXT
         )
     ''')
+    try:
+        cursor.execute("ALTER TABLE papers ADD COLUMN full_text TEXT")
+    except sqlite3.OperationalError:
+        pass
     conn.commit()
 
 def update_database():
@@ -43,10 +49,28 @@ def update_database():
     for pdf_file in pdf_files:
         filename = os.path.basename(pdf_file)
         
-        cursor.execute("SELECT 1 FROM papers WHERE filename = ?", (filename,))
-        if cursor.fetchone():
-            print(f"Skipping {filename}, already in database.")
-            continue
+        cursor.execute("SELECT full_text FROM papers WHERE filename = ?", (filename,))
+        row = cursor.fetchone()
+        
+        # Local text extraction
+        full_text = ""
+        try:
+            with open(pdf_file, 'rb') as f:
+                reader = pypdf.PdfReader(f)
+                for page in reader.pages:
+                    full_text += (page.extract_text() or "") + "\n"
+        except Exception as e:
+            print(f"Failed to extract text locally for {filename}: {e}")
+
+        if row:
+            if row[0]:
+                print(f"Skipping {filename}, already fully processed.")
+                continue
+            else:
+                print(f"Updating {filename} with full text...")
+                cursor.execute("UPDATE papers SET full_text = ? WHERE filename = ?", (full_text, filename))
+                conn.commit()
+                continue
             
         print(f"Processing {filename} via Gemini...")
         
@@ -70,8 +94,8 @@ def update_database():
             data = PaperInfo.model_validate_json(response.text)
             
             cursor.execute('''
-                INSERT INTO papers (filename, title, abstract, authors, publication_year, journal, open_access, url_or_doi)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO papers (filename, title, abstract, authors, publication_year, journal, open_access, url_or_doi, full_text)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 filename, 
                 data.title, 
@@ -80,7 +104,8 @@ def update_database():
                 data.publication_year, 
                 data.journal, 
                 1 if data.open_access else 0, 
-                data.url_or_doi
+                data.url_or_doi,
+                full_text
             ))
             conn.commit()
             print(f"Successfully added {filename} to database.")

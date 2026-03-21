@@ -32,6 +32,7 @@ Answer questions such as:
 3.  Install dependencies:
     ```bash
     uv pip install -r requirements.txt
+    deactivate
     ```
 4.  Set up your environment variables by creating a `.env` file in the root directory:
     ```bash
@@ -42,7 +43,7 @@ Answer questions such as:
 
 First, initialize the file store. This only needs to be run once in advance of querying the API (or whenever you add new PDFs to the `papers/` directory):
 ```bash
-python init_store.py
+uv run python init_store.py
 ```
 
 ### Database Initialization
@@ -51,7 +52,7 @@ To power the `/filter` endpoint rapidly, the backend relies on an SQLite databas
 
 Before querying the filter API, ensure you build or update the database:
 ```bash
-python update_db.py
+uv run python update_db.py
 ```
 This script will seamlessly parse all documents in `papers/` and save their `PaperInfo` attributes locally to `papers.db`.
 
@@ -59,7 +60,7 @@ This script will seamlessly parse all documents in `papers/` and save their `Pap
 
 Then, start the FastAPI server:
 ```bash
-uvicorn main:app --reload
+uv run uvicorn main:app --reload
 ```
 
 The server will automatically attach to the existing File Search store configured by the initialization script, avoiding redundant upload times.

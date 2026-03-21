@@ -137,8 +137,8 @@ def filter_papers(req: FilterRequest):
     elif req.open_access is False:
         query += " AND open_access = 0"
     if req.keyword_search:
-        query += " AND (title LIKE ? OR abstract LIKE ?)"
-        params.extend([f"%{req.keyword_search}%", f"%{req.keyword_search}%"])
+        query += " AND (title LIKE ? OR abstract LIKE ? OR full_text LIKE ?)"
+        params.extend([f"%{req.keyword_search}%", f"%{req.keyword_search}%", f"%{req.keyword_search}%"])
 
     cursor.execute(query, params)
     rows = cursor.fetchall()
