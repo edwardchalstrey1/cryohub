@@ -56,3 +56,30 @@ curl -X POST http://localhost:8000/ask \
   -H "Content-Type: application/json" \
   -d '{"prompt": "What CPAs have the lowest toxicity at vitrification concentrations for neural tissue?"}'
 ```
+
+### Example Response
+
+The backend enforces a strict JSON schema and returns the extracted `data` along with the grounding `sources` used:
+
+```json
+{
+  "data": {
+    "summary": "According to the literature, M22 and variations of VSN22 show reduced toxicity...",
+    "key_findings": [
+      "M22 achieves vitrification with acceptable viability in cortical slices.",
+      "Toxicity is primarily driven by osmotic stress rather than biochemical toxicity at -130°C."
+    ],
+    "materials_and_methods": [
+      "M22 (Cryoprotective Agent)",
+      "Neural Cortical Slices",
+      "Vitrification"
+    ],
+    "limitations": [
+      "Long-term structural connectivity recovery remains unproven."
+    ]
+  },
+  "sources": [
+    "Advances in Neural Cryopreservation - Smith et al."
+  ]
+}
+```
