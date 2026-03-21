@@ -96,8 +96,17 @@ async def lifespan(app: FastAPI):
     # Store persists across restarts for production, so no cleanup is performed here
 
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/ask", response_model=AskResponse)
 def ask_question(req: AskRequest):
