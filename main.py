@@ -1,0 +1,95 @@
+import os
+import glob
+import time
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from google import genai
+from google.genai import types
+
+# Global state for communicating with the Gemini File Search store
+app_state = {}
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize the Gemini client
+    # It relies on the GEMINI_API_KEY environment variable being set
+    client = genai.Client()
+    
+    print("Initializing Gemini File Search Store...")
+    # Create the store
+    store = client.file_search_stores.create(display_name="cryohub_papers")
+    
+    # Locate all PDFs in the papers/ directory
+    papers_dir = os.path.join(os.path.dirname(__file__), "papers")
+    pdf_files = glob.glob(os.path.join(papers_dir, "*.pdf"))
+    
+    print(f"Found {len(pdf_files)} PDF files in {papers_dir}. Uploading...")
+    
+    upload_ops = []
+    for pdf_file in pdf_files:
+        print(f"Uploading {os.path.basename(pdf_file)}...")
+        op = client.file_search_stores.upload_to_file_search_store(
+            file_search_store_name=store.name, file=pdf_file
+        )
+        upload_ops.append(op)
+        
+    print("Waiting for files to be processed by Gemini (this may take a few moments)...")
+    for op in upload_ops:
+        while not op.done:
+            time.sleep(2)
+            op = client.operations.get(op)
+            
+    # Save the references in global state so the endpoints can use them
+    app_state["store_name"] = store.name
+    app_state["client"] = client
+    print(f"Store {store.name} is ready.")
+    
+    yield
+    
+    # Cleanup: delete the store when the app shuts down so we don't accumulate stores during dev
+    print(f"Cleaning up store {store.name}...")
+    client.file_search_stores.delete(name=store.name)
+
+app = FastAPI(lifespan=lifespan)
+
+class AskRequest(BaseModel):
+    prompt: str
+
+class AskResponse(BaseModel):
+    answer: str
+    sources: list[str]
+
+@app.post("/ask", response_model=AskResponse)
+def ask_question(req: AskRequest):
+    client = app_state.get("client")
+    store_name = app_state.get("store_name")
+    
+    if not client or not store_name:
+        raise HTTPException(
+            status_code=503, 
+            detail="The File Search store is not fully initialized. Please try again in a few seconds."
+        )
+        
+    response = client.models.generate_content(
+        model="gemini-3.1-pro",
+        contents=req.prompt,
+        config=types.GenerateContentConfig(
+            tools=[
+                types.Tool(
+                    file_search=types.FileSearch(file_search_store_names=[store_name])
+                )
+            ]
+        ),
+    )
+    
+    grounding = response.candidates[0].grounding_metadata
+    sources = []
+    if grounding and grounding.grounding_chunks:
+        # Extract unique sources titles from the grounding chunks
+        sources = list({c.retrieved_context.title for c in grounding.grounding_chunks if c.retrieved_context})
+        
+    return AskResponse(
+        answer=response.text,
+        sources=sources
+    )
