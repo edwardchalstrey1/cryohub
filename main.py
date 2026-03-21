@@ -2,6 +2,7 @@ import os
 import glob
 import time
 from contextlib import asynccontextmanager
+from typing import Literal
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from google import genai
@@ -69,6 +70,7 @@ app = FastAPI(lifespan=lifespan)
 
 class AskRequest(BaseModel):
     prompt: str
+    model: Literal["gemini-flash-latest", "gemini-pro-latest"] = "gemini-flash-latest"
 
 
 class AskResponse(BaseModel):
@@ -88,7 +90,7 @@ def ask_question(req: AskRequest):
         )
 
     response = client.models.generate_content(
-        model="gemini-3.1-pro-preview",
+        model=req.model,
         contents=req.prompt,
         config=types.GenerateContentConfig(
             tools=[
