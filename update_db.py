@@ -3,6 +3,8 @@ import glob
 import sqlite3
 import json
 import pypdf
+import requests
+import time
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
@@ -45,7 +47,9 @@ def init_db(conn):
             cooling_rate INTEGER,
             warming_rate INTEGER,
             storage_duration INTEGER,
-            storage_temperature INTEGER
+            storage_temperature INTEGER,
+            extracted_references TEXT,
+            internal_citations TEXT
         )
     ''')
     conn.commit()
@@ -89,9 +93,10 @@ def update_database():
             "Extract the explicit detailed metadata for this research paper according to the comprehensive PaperInfo schema. "
             "For arrays like publication_type, model_type, or techniques, cross-reference against standard scientific classifications. "
             "For arrays like cpa_type and delivery_method, categorize cleanly based on explicitly stated cryoprotective methods. "
-            "For journal impact factor and citations, ONLY extract them if explicitly stated in the text, otherwise return null. "
+            "For journal impact factor, ONLY extract it if explicitly stated in the text, otherwise return null. "
             "For cooling_rate (°C/min), warming_rate (°C/min), storage_duration (days), and storage_temperature (°C), extract ONLY the explicit core numerical integer value, excluding the units string from your JSON. "
-            "If open access status is not stated cleanly, infer based on copyright block or return false."
+            "If open access status is not stated cleanly, infer based on copyright block or return false. "
+            "Ensure you extract the titles of all explicitly cited references within the paper into the extracted_references list."
         )
         try:
             response = client.models.generate_content(
@@ -105,13 +110,34 @@ def update_database():
             
             data = PaperInfo.model_validate_json(response.text)
             
+            # Fetch external citations natively via Semantic Scholar
+            external_citations = data.citations
+            query_title = data.title if data.title else filename
+            try:
+                time.sleep(0.5) # Be gentle with the API
+                res = requests.get(
+                    "https://api.semanticscholar.org/graph/v1/paper/search",
+                    params={"query": query_title, "limit": 1, "fields": "citationCount"},
+                    timeout=5
+                )
+                if res.status_code == 200:
+                    api_data = res.json()
+                    if api_data.get("data") and len(api_data["data"]) > 0:
+                        external_citations = api_data["data"][0].get("citationCount", data.citations)
+                        print(f"Matched '{query_title}' on Semantic Scholar. Citations: {external_citations}")
+                    else:
+                        print(f"No Semantic Scholar match for '{query_title}'.")
+            except Exception as e:
+                print(f"Failed to fetch citations from Semantic Scholar: {e}")
+            
             cursor.execute('''
                 INSERT INTO papers (
                     filename, title, abstract, authors, publication_year, journal, open_access, url_or_doi, full_text,
                     publication_type, model_type, research_type, journal_impact_factor, author_institution, country_region, funding_source, citations, techniques,
-                    cpa_type, cpa_concentration_min, cpa_concentration_max, delivery_method, preservation_method, outcomes_metrics, cooling_rate, warming_rate, storage_duration, storage_temperature
+                    cpa_type, cpa_concentration_min, cpa_concentration_max, delivery_method, preservation_method, outcomes_metrics, cooling_rate, warming_rate, storage_duration, storage_temperature,
+                    extracted_references, internal_citations
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 filename, 
                 data.title, 
@@ -129,7 +155,7 @@ def update_database():
                 json.dumps(data.author_institution),
                 json.dumps(data.country_region),
                 json.dumps(data.funding_source),
-                data.citations,
+                external_citations,
                 json.dumps(data.techniques),
                 json.dumps(data.cpa_type),
                 data.cpa_concentration_min,
@@ -140,13 +166,43 @@ def update_database():
                 data.cooling_rate,
                 data.warming_rate,
                 data.storage_duration,
-                data.storage_temperature
+                data.storage_temperature,
+                json.dumps(data.extracted_references),
+                json.dumps([])
             ))
             conn.commit()
             print(f"Successfully added {filename} to database.")
         except Exception as e:
             print(f"Failed to process {filename}: {e}")
 
+    print("\nStarting second-pass to cross-link internal citations...")
+    cursor.execute("SELECT id, title, extracted_references FROM papers")
+    all_papers = cursor.fetchall()
+    
+    for p in all_papers:
+        p_id = p[0]
+        p_title = p[1]
+        try:
+            refs = json.loads(p[2]) if p[2] else []
+        except:
+            refs = []
+            
+        internal_cites = []
+        for ref in refs:
+            if not ref or len(ref) < 10:
+                continue
+            cursor.execute("SELECT id, title FROM papers WHERE id != ?", (p_id,))
+            targets = cursor.fetchall()
+            for t in targets:
+                t_id = t[0]
+                t_title = t[1]
+                if t_title and (t_title.lower() in ref.lower() or ref.lower() in t_title.lower()):
+                    if t_id not in internal_cites:
+                        internal_cites.append(t_id)
+                        
+        cursor.execute("UPDATE papers SET internal_citations = ? WHERE id = ?", (json.dumps(internal_cites), p_id))
+    
+    conn.commit()
     conn.close()
     print("\nDatabase update complete. 'papers.db' is ready for querying!")
 

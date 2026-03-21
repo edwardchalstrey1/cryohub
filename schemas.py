@@ -147,6 +147,8 @@ class PaperInfo(BaseModel):
     storage_duration: int | None = None
     storage_temperature: int | None = None
 
+    extracted_references: list[str] = []
+    internal_citations: list[str] = []
 
 class FilterRequest(BaseModel):
     keyword_search: str | None = None

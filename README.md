@@ -154,6 +154,8 @@ curl -X POST http://localhost:8000/filter \
         "warming_rate": 50,
         "storage_duration": 180,
         "storage_temperature": -196,
+        "extracted_references": ["Safety of M22 over Glycerol in Vitrification Protocols", "Osmotic tolerance of cortical tissue"],
+        "internal_citations": [12, 19],
         "year_min": 2020,
         "year_max": 2024,
         "impact_factor_min": 3.5,

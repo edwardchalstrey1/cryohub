@@ -44,7 +44,9 @@ def row_to_paper_info(row) -> PaperInfo:
         cooling_rate=row["cooling_rate"],
         warming_rate=row["warming_rate"],
         storage_duration=row["storage_duration"],
-        storage_temperature=row["storage_temperature"]
+        storage_temperature=row["storage_temperature"],
+        extracted_references=json.loads(row["extracted_references"]) if row["extracted_references"] else [],
+        internal_citations=json.loads(row["internal_citations"]) if row["internal_citations"] else []
     )
 
 # Global state for communicating with the Gemini File Search store
