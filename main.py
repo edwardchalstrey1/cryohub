@@ -181,6 +181,39 @@ def filter_papers(req: FilterRequest):
             query += " AND techniques LIKE ?"
             params.append(f'%"{tech}"%')
 
+    if req.cpa_type:
+        for val in req.cpa_type:
+            query += " AND cpa_type LIKE ?"
+            params.append(f'%"{val}"%')
+    if req.delivery_method:
+        for val in req.delivery_method:
+            query += " AND delivery_method LIKE ?"
+            params.append(f'%"{val}"%')
+    if req.preservation_method:
+        for val in req.preservation_method:
+            query += " AND preservation_method LIKE ?"
+            params.append(f'%"{val}"%')
+    if req.outcomes_metrics:
+        for val in req.outcomes_metrics:
+            query += " AND outcomes_metrics LIKE ?"
+            params.append(f'%"{val}"%')
+
+    if req.cpa_concentration:
+        query += " AND cpa_concentration LIKE ?"
+        params.append(f"%{req.cpa_concentration}%")
+    if req.cooling_rate:
+        query += " AND cooling_rate LIKE ?"
+        params.append(f"%{req.cooling_rate}%")
+    if req.warming_rate:
+        query += " AND warming_rate LIKE ?"
+        params.append(f"%{req.warming_rate}%")
+    if req.storage_duration:
+        query += " AND storage_duration LIKE ?"
+        params.append(f"%{req.storage_duration}%")
+    if req.storage_temperature:
+        query += " AND storage_temperature LIKE ?"
+        params.append(f"%{req.storage_temperature}%")
+
     if req.keyword_search:
         query += " AND (title LIKE ? OR abstract LIKE ? OR full_text LIKE ?)"
         params.extend([f"%{req.keyword_search}%", f"%{req.keyword_search}%", f"%{req.keyword_search}%"])
@@ -207,7 +240,16 @@ def filter_papers(req: FilterRequest):
                 country_region=json.loads(row["country_region"]) if row["country_region"] else [],
                 funding_source=json.loads(row["funding_source"]) if row["funding_source"] else [],
                 citations=row["citations"],
-                techniques=json.loads(row["techniques"]) if row["techniques"] else []
+                techniques=json.loads(row["techniques"]) if row["techniques"] else [],
+                cpa_type=json.loads(row["cpa_type"]) if row["cpa_type"] else [],
+                cpa_concentration=row["cpa_concentration"],
+                delivery_method=json.loads(row["delivery_method"]) if row["delivery_method"] else [],
+                preservation_method=json.loads(row["preservation_method"]) if row["preservation_method"] else [],
+                outcomes_metrics=json.loads(row["outcomes_metrics"]) if row["outcomes_metrics"] else [],
+                cooling_rate=row["cooling_rate"],
+                warming_rate=row["warming_rate"],
+                storage_duration=row["storage_duration"],
+                storage_temperature=row["storage_temperature"]
             )
         )
         

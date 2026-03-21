@@ -34,7 +34,17 @@ def init_db(conn):
             country_region TEXT,
             funding_source TEXT,
             citations INTEGER,
-            techniques TEXT
+            techniques TEXT,
+            
+            cpa_type TEXT,
+            cpa_concentration TEXT,
+            delivery_method TEXT,
+            preservation_method TEXT,
+            outcomes_metrics TEXT,
+            cooling_rate TEXT,
+            warming_rate TEXT,
+            storage_duration TEXT,
+            storage_temperature TEXT
         )
     ''')
     conn.commit()
@@ -75,9 +85,11 @@ def update_database():
             continue
             
         prompt = (
-            "Extract the explicit detailed metadata for this research paper according to the PaperInfo schema. "
-            "For arrays like publication_type or techniques, cross-reference against standard scientific classifications. "
+            "Extract the explicit detailed metadata for this research paper according to the comprehensive PaperInfo schema. "
+            "For arrays like publication_type, model_systems, or techniques, cross-reference against standard scientific classifications. "
+            "For arrays like cpa_type and delivery_method, categorize cleanly based on explicitly stated cryoprotective methods. "
             "For journal impact factor and citations, ONLY extract them if explicitly stated in the text, otherwise return null. "
+            "For cooling_rate, warming_rate, storage_duration, and storage_temperature, extract the explicit values as strings if present. "
             "If open access status is not stated cleanly, infer based on copyright block or return false."
         )
         try:
@@ -95,9 +107,10 @@ def update_database():
             cursor.execute('''
                 INSERT INTO papers (
                     filename, title, abstract, authors, publication_year, journal, open_access, url_or_doi, full_text,
-                    publication_type, model_systems, research_type, journal_impact_factor, author_institution, country_region, funding_source, citations, techniques
+                    publication_type, model_systems, research_type, journal_impact_factor, author_institution, country_region, funding_source, citations, techniques,
+                    cpa_type, cpa_concentration, delivery_method, preservation_method, outcomes_metrics, cooling_rate, warming_rate, storage_duration, storage_temperature
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 filename, 
                 data.title, 
@@ -116,7 +129,16 @@ def update_database():
                 json.dumps(data.country_region),
                 json.dumps(data.funding_source),
                 data.citations,
-                json.dumps(data.techniques)
+                json.dumps(data.techniques),
+                json.dumps(data.cpa_type),
+                data.cpa_concentration,
+                json.dumps(data.delivery_method),
+                json.dumps(data.preservation_method),
+                json.dumps(data.outcomes_metrics),
+                data.cooling_rate,
+                data.warming_rate,
+                data.storage_duration,
+                data.storage_temperature
             ))
             conn.commit()
             print(f"Successfully added {filename} to database.")

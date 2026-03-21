@@ -58,7 +58,17 @@ class PaperInfo(BaseModel):
     funding_source: list[str]
     citations: int | None = None
     techniques: list[str]
-
+    
+    # Newly added fields from screenshot 2
+    cpa_type: list[str]
+    cpa_concentration: str | None = None
+    delivery_method: list[str]
+    preservation_method: list[str]
+    outcomes_metrics: list[str]
+    cooling_rate: str | None = None
+    warming_rate: str | None = None
+    storage_duration: str | None = None
+    storage_temperature: str | None = None
 
 class FilterRequest(BaseModel):
     keyword_search: str | None = None
@@ -73,6 +83,16 @@ class FilterRequest(BaseModel):
     country_region: str | None = None
     funding_source: list[str] | None = None
     techniques: list[str] | None = None
+
+    cpa_type: list[str] | None = None
+    cpa_concentration: str | None = None
+    delivery_method: list[str] | None = None
+    preservation_method: list[str] | None = None
+    outcomes_metrics: list[str] | None = None
+    cooling_rate: str | None = None
+    warming_rate: str | None = None
+    storage_duration: str | None = None
+    storage_temperature: str | None = None
 
     # Ranges
     year_min: int | None = None
