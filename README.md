@@ -48,15 +48,22 @@ uv run python init_store.py
 
 ### Database Initialization
 
-To power the `/filter` endpoint rapidly, the backend relies on an SQLite database that caches structured metadata natively extracted from your PDFs. 
+To power the `/filter` endpoint rapidly, the backend relies on an SQLite database (`papers.db`) that caches structured metadata natively extracted from your PDFs. 
 
 Before querying the filter API, ensure you build or update the database:
 ```bash
 uv run python update_db.py
 ```
-This script will seamlessly parse all documents in `papers/` and save their `PaperInfo` attributes locally to `papers.db`.
+
+**How it works:**
+When you run `update_db.py`, the script scans the `papers/` directory for any PDF files. For each PDF, it does two things:
+1. **Full-Text Extraction**: It uses the `pypdf` library to read through the actual text of the PDF locally on your machine. This full text is saved into the database, allowing you to perform deep keyword searches across the entire body of the paper (not just the title or abstract).
+2. **Metadata Extraction via AI**: It sends the PDF to the Gemini API and asks the AI to read the document and cleanly extract over 20 specific attributes (like the *Cooling Rate*, *Preservation Method*, *Model Type*, etc.). The AI organizes this information into a strict, standardized format. 
+
+All of this extracted information is saved into the `papers.db` SQLite file. When you query the `/filter` API later, it instantly searches this local database rather than having to re-read or re-process the PDFs, making your searches extremely fast and completely independent of the AI!
 
 ### Running the Backend
+
 
 Then, start the FastAPI server:
 ```bash
