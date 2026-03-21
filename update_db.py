@@ -41,10 +41,10 @@ def init_db(conn):
             delivery_method TEXT,
             preservation_method TEXT,
             outcomes_metrics TEXT,
-            cooling_rate TEXT,
-            warming_rate TEXT,
-            storage_duration TEXT,
-            storage_temperature TEXT
+            cooling_rate INTEGER,
+            warming_rate INTEGER,
+            storage_duration INTEGER,
+            storage_temperature INTEGER
         )
     ''')
     conn.commit()
@@ -89,7 +89,7 @@ def update_database():
             "For arrays like publication_type, model_type, or techniques, cross-reference against standard scientific classifications. "
             "For arrays like cpa_type and delivery_method, categorize cleanly based on explicitly stated cryoprotective methods. "
             "For journal impact factor and citations, ONLY extract them if explicitly stated in the text, otherwise return null. "
-            "For cooling_rate, warming_rate, storage_duration, and storage_temperature, extract the explicit values as strings if present. "
+            "For cooling_rate (°C/min), warming_rate (°C/min), storage_duration (days), and storage_temperature (°C), extract ONLY the explicit core numerical integer value, excluding the units string from your JSON. "
             "If open access status is not stated cleanly, infer based on copyright block or return false."
         )
         try:

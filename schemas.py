@@ -65,10 +65,10 @@ class PaperInfo(BaseModel):
     delivery_method: list[str]
     preservation_method: list[str]
     outcomes_metrics: list[str]
-    cooling_rate: str | None = None
-    warming_rate: str | None = None
-    storage_duration: str | None = None
-    storage_temperature: str | None = None
+    cooling_rate: int | None = None
+    warming_rate: int | None = None
+    storage_duration: int | None = None
+    storage_temperature: int | None = None
 
 class FilterRequest(BaseModel):
     keyword_search: str | None = None
@@ -89,10 +89,10 @@ class FilterRequest(BaseModel):
     delivery_method: list[str] | None = None
     preservation_method: list[str] | None = None
     outcomes_metrics: list[str] | None = None
-    cooling_rate: str | None = None
-    warming_rate: str | None = None
-    storage_duration: str | None = None
-    storage_temperature: str | None = None
+    cooling_rate: int | None = None
+    warming_rate: int | None = None
+    storage_duration: int | None = None
+    storage_temperature: int | None = None
 
     # Ranges
     year_min: int | None = None

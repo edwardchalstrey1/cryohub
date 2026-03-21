@@ -201,18 +201,18 @@ def filter_papers(req: FilterRequest):
     if req.cpa_concentration:
         query += " AND cpa_concentration LIKE ?"
         params.append(f"%{req.cpa_concentration}%")
-    if req.cooling_rate:
-        query += " AND cooling_rate LIKE ?"
-        params.append(f"%{req.cooling_rate}%")
-    if req.warming_rate:
-        query += " AND warming_rate LIKE ?"
-        params.append(f"%{req.warming_rate}%")
-    if req.storage_duration:
-        query += " AND storage_duration LIKE ?"
-        params.append(f"%{req.storage_duration}%")
-    if req.storage_temperature:
-        query += " AND storage_temperature LIKE ?"
-        params.append(f"%{req.storage_temperature}%")
+    if req.cooling_rate is not None:
+        query += " AND cooling_rate = ?"
+        params.append(req.cooling_rate)
+    if req.warming_rate is not None:
+        query += " AND warming_rate = ?"
+        params.append(req.warming_rate)
+    if req.storage_duration is not None:
+        query += " AND storage_duration = ?"
+        params.append(req.storage_duration)
+    if req.storage_temperature is not None:
+        query += " AND storage_temperature = ?"
+        params.append(req.storage_temperature)
 
     if req.keyword_search:
         query += " AND (title LIKE ? OR abstract LIKE ? OR full_text LIKE ?)"

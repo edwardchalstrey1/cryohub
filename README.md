@@ -115,7 +115,9 @@ You can use the `/filter` endpoint to rapidly and locally query your `papers.db`
 ### Available Filter Fields
 - `keyword_search` (string)
 - `publication_type`, `model_type`, `research_type`, `funding_source`, `techniques`, `cpa_type`, `delivery_method`, `preservation_method`, `outcomes_metrics` (Array of Strings)
-- `journal`, `author_institution`, `country_region`, `cpa_concentration`, `cooling_rate`, `warming_rate`, `storage_duration`, `storage_temperature` (String, partial matches)
+- `journal`, `author_institution`, `country_region`, `cpa_concentration` (String, partial matches)
+- `cooling_rate` (Integer, °C/min), `warming_rate` (Integer, °C/min)
+- `storage_duration` (Integer, days), `storage_temperature` (Integer, °C)
 - `open_access` (boolean)
 - `year_min`, `year_max` (integer ranges)
 - `impact_factor_min`, `impact_factor_max` (float ranges)
@@ -140,10 +142,10 @@ curl -X POST http://localhost:8000/filter \
         "delivery_method": ["Bulk perfusion"],
         "preservation_method": ["Ice-free"],
         "outcomes_metrics": ["Post-thaw viability"],
-        "cooling_rate": "1 °C/min",
-        "warming_rate": "50 °C/min",
-        "storage_duration": "6 months",
-        "storage_temperature": "-196",
+        "cooling_rate": 1,
+        "warming_rate": 50,
+        "storage_duration": 180,
+        "storage_temperature": -196,
         "year_min": 2020,
         "year_max": 2024,
         "impact_factor_min": 3.5,
