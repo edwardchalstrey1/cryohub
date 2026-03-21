@@ -116,9 +116,9 @@ You can use the `/filter` endpoint to rapidly and locally query your `papers.db`
 curl -X POST http://localhost:8000/filter \
   -H "Content-Type: application/json" \
   -d '{
-        "publication_year": "2023",
+        "publication_year": "2020",
         "open_access": true,
-        "keyword_search": "vitrification toxicity"
+        "keyword_search": "cryoprotection"
       }'
 ```
 
