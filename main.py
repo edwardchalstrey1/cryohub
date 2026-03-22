@@ -96,8 +96,17 @@ async def lifespan(app: FastAPI):
     # Store persists across restarts for production, so no cleanup is performed here
 
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/ask", response_model=AskResponse)
 def ask_question(req: AskRequest):
@@ -137,18 +146,39 @@ def ask_question(req: AskRequest):
         )
 
     sources_info = []
+    
+    retrieved_filenames = set()
+    if hasattr(response, "candidates") and response.candidates:
+        metadata = getattr(response.candidates[0], "grounding_metadata", None)
+        if metadata and getattr(metadata, "grounding_chunks", None):
+            for chunk in metadata.grounding_chunks:
+                ctx = getattr(chunk, "retrieved_context", None)
+                if ctx and getattr(ctx, "title", None):
+                    retrieved_filenames.add(ctx.title)
+
     db_path = os.path.join(os.path.dirname(__file__), "papers.db")
-    if os.path.exists(db_path) and data.source_titles:
+    if os.path.exists(db_path):
         import sqlite3
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        for title in data.source_titles:
-            cursor.execute("SELECT * FROM papers WHERE title LIKE ?", (f"%{title}%",))
+        
+        for fname in retrieved_filenames:
+            cursor.execute("SELECT * FROM papers WHERE filename = ?", (fname,))
             row = cursor.fetchone()
             if row:
                 p_info = row_to_paper_info(row)
-                sources_info.append(p_info.model_dump(exclude_none=True))
+                if not any(s["id"] == p_info.id for s in sources_info):
+                    sources_info.append(p_info.model_dump(exclude_none=True))
+
+        if data.source_titles:
+            for title in data.source_titles:
+                cursor.execute("SELECT * FROM papers WHERE title LIKE ?", (f"%{title}%",))
+                row = cursor.fetchone()
+                if row:
+                    p_info = row_to_paper_info(row)
+                    if not any(s["id"] == p_info.id for s in sources_info):
+                        sources_info.append(p_info.model_dump(exclude_none=True))
         conn.close()
 
     return AskResponse(data=data, sources=sources_info)
